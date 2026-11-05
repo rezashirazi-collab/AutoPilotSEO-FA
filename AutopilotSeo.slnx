@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/AutopilotSeo.Core/AutopilotSeo.Core.csproj" />
+    <Project Path="src/AutopilotSeo.Web/AutopilotSeo.Web.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/AutopilotSeo.Tests/AutopilotSeo.Tests.csproj" />
+  </Folder>
+</Solution>

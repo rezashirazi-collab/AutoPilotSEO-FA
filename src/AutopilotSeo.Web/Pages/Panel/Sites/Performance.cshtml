@@ -1,0 +1,113 @@
+@page "/panel/sites/{id:int}/performance"
+@model AutopilotSeo.Web.Pages.Panel.Sites.PerformanceModel
+@using PM = AutopilotSeo.Web.Pages.Panel.Sites.PerformanceModel
+@{
+    ViewData["Title"] = "عملکرد جستجو";
+    var c = Model.Conn;
+    var progress = Model.WindowDays == 0 ? 0 : Math.Min(100, 100 * Model.SyncedDays / Model.WindowDays);
+}
+
+<div class="main__head">
+    <div>
+        <div class="crumbs"><a href="/panel">سایت‌ها</a> / <a href="/panel/sites/@Model.Site.Id" class="ltr">@Model.Site.Domain</a></div>
+        <h1>عملکرد جستجو</h1>
+        @if (Model.Latest is { } l) { <p>@Fa.Num(PM.Period) روز منتهی به @Fa.Date(l)، در مقایسه با @Fa.Num(PM.Period) روز قبل از آن. منبع: سرچ کنسول (دادهٔ نهایی).</p> }
+    </div>
+    @if (c?.Property is not null) { <a class="btn btn--ghost btn--sm" href="/panel/sites/@Model.Site.Id/gsc"><span class="ltr">@c.Property</span></a> }
+</div>
+
+@if (c is null)
+{
+    <div class="box"><div class="empty">
+        <h2>سرچ کنسول هنوز وصل نشده</h2>
+        <p>با اتصال سرچ کنسول، ۱۶ ماه دادهٔ کلیک و نمایش سایت دریافت می‌شود و از آن به بعد هر روز به‌روز می‌ماند.</p>
+        <a class="btn" href="/oauth/google/start/@Model.Site.Id">اتصال سرچ کنسول</a>
+    </div></div>
+    return;
+}
+@if (c.NeedsReconnect)
+{
+    <div class="notice notice--warn">@c.LastError <a href="/oauth/google/start/@Model.Site.Id">اتصال دوباره</a></div>
+}
+else if (c.Property is null)
+{
+    <div class="notice notice--warn">حساب گوگل وصل است اما property انتخاب نشده. <a href="/panel/sites/@Model.Site.Id/gsc">انتخاب property</a></div>
+}
+else if (c.LastError is not null)
+{
+    <div class="notice notice--warn">@c.LastError</div>
+}
+
+@if (c.Property is not null && progress < 100)
+{
+    <div class="box sync">
+        <div class="box__body">
+            <div class="meter"><div class="meter__bar"><i style="width:@(progress)%"></i></div><b>@Fa.Num(progress)٪</b></div>
+            <p class="muted">در حال دریافت تاریخچه: @Fa.N(Model.SyncedDays) از @Fa.N(Model.WindowDays) روز. روزهای اخیر اول دریافت می‌شوند؛ این صفحه را بعداً تازه کنید.</p>
+        </div>
+    </div>
+}
+
+@if (Model.Latest is null)
+{
+    if (c.Property is not null)
+    {
+        <div class="box"><div class="empty"><h2>هنوز داده‌ای دریافت نشده</h2><p>دریافت در پس‌زمینه انجام می‌شود و معمولاً چند دقیقه طول می‌کشد.</p></div></div>
+    }
+    return;
+}
+
+<div class="kpis">
+    @{
+        var dc = PM.Delta(Model.Cur.Clicks, Model.Prev.Clicks);
+        var di = PM.Delta(Model.Cur.Impressions, Model.Prev.Impressions);
+        var dr = PM.Delta(Model.Cur.Ctr, Model.Prev.Ctr);
+        var dp = PM.PositionDelta(Model.Cur.Position, Model.Prev.Position);
+    }
+    <div class="kpi"><span>کلیک</span><b>@Fa.N(Model.Cur.Clicks)</b><small class="@dc.Css"><bdi dir="ltr">@dc.Text</bdi></small></div>
+    <div class="kpi"><span>نمایش</span><b>@Fa.N(Model.Cur.Impressions)</b><small class="@di.Css"><bdi dir="ltr">@di.Text</bdi></small></div>
+    <div class="kpi"><span>CTR</span><b>@Fa.Pct(Model.Cur.Ctr)</b><small class="@dr.Css"><bdi dir="ltr">@dr.Text</bdi></small></div>
+    <div class="kpi"><span>جایگاه میانگین</span><b>@Fa.Dec(Model.Cur.Position)</b><small class="@dp.Css">@dp.Text</small></div>
+</div>
+
+<div class="box">
+    <div class="box__head">
+        <h2>کلیک روزانه، @Fa.Num(PM.ChartDays) روز اخیر</h2>
+        @if (Model.Bands.Count > 0) { <span class="muted" style="font-size:13px">نوارهای خاکستری: یادداشت‌ها (آپدیت گوگل، ناهنجاری داده)</span> }
+    </div>
+    <div class="box__body">
+        <svg class="perf-chart" viewBox="0 0 720 220" role="img" aria-label="نمودار کلیک روزانه">
+            @foreach (var b in Model.Bands)
+            {
+                <rect x="@b.X.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)" y="16" width="@b.Width.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)" height="174" fill="#eef0f4"><title>@b.Title</title></rect>
+            }
+            <line x1="40" y1="190" x2="710" y2="190" stroke="#dce1e8" />
+            <line x1="40" y1="16" x2="710" y2="16" stroke="#eef0f4" />
+            <polyline points="@Model.ClicksPath" fill="none" stroke="#172033" stroke-width="2" stroke-linejoin="round" />
+            <g font-family="Estedad, Tahoma" font-size="14" fill="#7a8396">
+                <text x="34" y="20" text-anchor="end">@Fa.N(Model.ChartMax)</text>
+                <text x="34" y="194" text-anchor="end">۰</text>
+                <text x="40" y="210">@Fa.ShortDate(Model.ChartStart)</text>
+                <text x="375" y="210" text-anchor="middle">@Fa.ShortDate(Model.ChartStart.AddDays(PM.ChartDays / 2))</text>
+                <text x="710" y="210" text-anchor="end">@Fa.ShortDate(Model.Latest.Value)</text>
+            </g>
+        </svg>
+        @if (Model.Cur.Clicks > 0)
+        {
+            <p class="muted" style="font-size:13.5px;margin-top:8px">
+                @Fa.Pct((double)Model.AnonymousClicks / Model.Cur.Clicks) از کلیک‌های این دوره مربوط به کوئری‌های ناشناس است که سرچ کنسول متنشان را نشان نمی‌دهد.
+            </p>
+        }
+    </div>
+</div>
+
+<div class="grid-2 grid-2--even">
+    <div class="box">
+        <div class="box__head"><h2>کوئری‌های برتر</h2></div>
+        @await Html.PartialAsync("_TopTable", (Model.Queries, false))
+    </div>
+    <div class="box">
+        <div class="box__head"><h2>صفحه‌های برتر</h2></div>
+        @await Html.PartialAsync("_TopTable", (Model.Pages, true))
+    </div>
+</div>

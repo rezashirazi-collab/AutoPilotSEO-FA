@@ -1,0 +1,38 @@
+@page
+@model AutopilotSeo.Web.Pages.Panel.Sites.NewModel
+@{ ViewData["Title"] = "افزودن سایت"; }
+
+<div class="main__head">
+    <div>
+        <div class="crumbs"><a href="/panel">سایت‌ها</a></div>
+        <h1>افزودن سایت</h1>
+    </div>
+</div>
+
+<div class="grid-2">
+    <div class="box">
+        <form method="post" class="box__body" style="display:grid;gap:18px" novalidate>
+            <div class="field">
+                <label asp-for="Domain">دامنهٔ سایت</label>
+                <input asp-for="Domain" class="input" dir="ltr" placeholder="example.com" autofocus />
+                <small>با یا بدون https و www فرقی نمی‌کند.</small>
+                <span asp-validation-for="Domain" class="field-error"></span>
+            </div>
+            <div class="field">
+                <label asp-for="DisplayName">نام کسب‌وکار <span class="muted">(اختیاری)</span></label>
+                <input asp-for="DisplayName" class="input" />
+            </div>
+            <div><button class="btn" type="submit">افزودن و رفتن به پرونده</button></div>
+        </form>
+    </div>
+    <div class="box">
+        <div class="box__body">
+            <h2 style="font-size:16px">بعد از افزودن چه می‌شود؟</h2>
+            <ul class="facts" style="margin-top:12px">
+                <li>پروندهٔ کسب‌وکار را پر می‌کنی: هدف، محصولات، رقبا، لحن و خط قرمزها.</li>
+                <li>سرچ کنسول و وردپرس را وصل می‌کنی تا سیستم خواندن داده‌ها را شروع کند.</li>
+                <li>تا تأیید پرونده هیچ تغییری روی سایت انجام نمی‌شود.</li>
+            </ul>
+        </div>
+    </div>
+</div>

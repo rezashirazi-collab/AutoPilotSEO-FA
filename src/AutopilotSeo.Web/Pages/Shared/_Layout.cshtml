@@ -1,0 +1,51 @@
+@{ var bare = ViewData["Bare"] is true; }
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@(ViewData["Title"] is string t ? $"{t} | {Fa.ProductName}" : Fa.ProductName)</title>
+    @if (ViewData["Description"] is string d) { <meta name="description" content="@d" /> }
+    <link rel="preload" href="~/fonts/estedad-arabic.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+@if (bare)
+{
+    @RenderBody()
+}
+else
+{
+    <header class="site-header">
+        <div class="wrap site-header__in">
+            <a class="brand" href="/"><partial name="_Brand" /></a>
+            <nav class="site-nav" aria-label="بخش‌های صفحه">
+                <a href="/#order">روش کار</a>
+                <a href="/#profile">شناخت کسب‌وکار</a>
+                <a href="/#safety">ایمنی</a>
+                <a href="/#impact">سنجش اثر</a>
+            </nav>
+            <div class="site-header__actions">
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    <a class="btn btn--sm" href="/panel">پنل من</a>
+                }
+                else
+                {
+                    <a class="btn btn--ghost btn--sm" href="/account/login">ورود</a>
+                    <a class="btn btn--sm" href="/account/register">شروع آزمایش رایگان</a>
+                }
+            </div>
+        </div>
+    </header>
+    <main>@RenderBody()</main>
+    <footer class="site-footer">
+        <div class="wrap site-footer__in">
+            <span>© @Fa.Num(new System.Globalization.PersianCalendar().GetYear(DateTime.UtcNow)) @Fa.ProductName</span>
+            <span><a href="/account/login">ورود</a><a href="/account/register">ثبت‌نام</a></span>
+        </div>
+    </footer>
+}
+@await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

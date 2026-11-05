@@ -1,0 +1,148 @@
+@page "/panel/sites/{id:int}"
+@model AutopilotSeo.Web.Pages.Panel.Sites.DetailModel
+@{
+    ViewData["Title"] = Model.Site.Domain;
+    var s = Model.Site;
+    var approved = Model.Approved is not null;
+    var states = new[] { ProjectState.Onboarding, ProjectState.Start, ProjectState.Routine, ProjectState.Growth };
+    string StateNote(ProjectState st) => st switch
+    {
+        ProjectState.Onboarding => "یادگیری و خط پایه",
+        ProjectState.Start => "فنی، نقشه و ساختار",
+        ProjectState.Routine => "بهبود و محتوا",
+        _ => "خوشه‌ها و رقبا",
+    };
+}
+
+<div class="main__head">
+    <div>
+        <div class="crumbs"><a href="/panel">سایت‌ها</a></div>
+        <h1 class="ltr">@s.Domain</h1>
+        @if (s.DisplayName != "") { <p>@s.DisplayName</p> }
+    </div>
+    @if (s.IsPaused) { <span class="state state--paused">متوقف</span> }
+    else { <span class="state @(s.State == ProjectState.Crisis ? "state--crisis" : "")">وضعیت: @Fa.State(s.State)</span> }
+</div>
+
+@if (s.State == ProjectState.Crisis)
+{
+    <div class="notice notice--warn">سایت در وضعیت بحران است: تولید محتوا و تغییرات غیرمرتبط با علت متوقف شده‌اند.</div>
+}
+
+@if (Model.OpenAlerts.Count > 0)
+{
+    <div class="box" style="margin-bottom:20px">
+        <div class="box__head"><h2>هشدارهای باز</h2><span class="muted" style="font-size:13px">پایش روزانه و هفتگی</span></div>
+        <div class="box__body" style="padding-block:4px">
+            <ul class="alerts">
+                @foreach (var a in Model.OpenAlerts)
+                {
+                    <li>
+                        <span class="risk @(a.Severity == Severity.Critical ? "risk--3" : a.Severity == Severity.Warning ? "risk--2" : "risk--0")">@Fa.Severity(a.Severity)</span>
+                        <b>@a.Title</b>
+                        @if (a.Detail is not null) { <small>@a.Detail</small> }
+                    </li>
+                }
+            </ul>
+        </div>
+    </div>
+}
+
+<div class="grid-2">
+    <div class="box">
+        <div class="box__head">
+            <h2>مرحلهٔ ۰: اتصال و خط پایه</h2>
+            <span class="muted" style="font-size:13.5px">تا تأیید پرونده، فقط خواندن</span>
+        </div>
+        <div class="box__body" style="padding-block:4px">
+            <ul class="checklist">
+                <li class="is-done">
+                    <span class="checklist__mark"></span>
+                    <div><b>ثبت سایت</b><small>@Fa.Date(s.CreatedAt)</small></div>
+                </li>
+                <li class="@(approved ? "is-done" : "")">
+                    <span class="checklist__mark"></span>
+                    <div>
+                        <b>پروندهٔ کسب‌وکار</b>
+                        <small>
+                            @if (approved) { <text>نسخهٔ @Fa.Num(Model.Approved!.Version) در @Fa.Date(Model.Approved.ApprovedAt!.Value) تأیید شد.</text> }
+                            else { <text>کامل بودن @Fa.Num(Model.Latest.Score)٪. هیچ پیشنهادی قبل از تأیید پرونده ساخته نمی‌شود.</text> }
+                        </small>
+                    </div>
+                    <a class="btn btn--sm @(approved ? "btn--ghost" : "")" href="/panel/sites/@s.Id/profile">@(approved ? "ویرایش" : "تکمیل پرونده")</a>
+                </li>
+                @{ var g = Model.Gsc; var gscOk = g?.Property is not null && !g.NeedsReconnect; }
+                <li class="@(gscOk ? "is-done" : "")">
+                    <span class="checklist__mark"></span>
+                    <div>
+                        <b>اتصال سرچ کنسول</b>
+                        <small>
+                            @if (g is null) { <text>دریافت ۱۶ ماه داده و همگام‌سازی روزانه. دسترسی فقط خواندنی است.</text> }
+                            else if (g.NeedsReconnect) { <text>دسترسی باطل شده است؛ دوباره وصل شوید.</text> }
+                            else if (g.Property is null) { <text>حساب <span class="ltr">@g.GoogleEmail</span> وصل است؛ property را انتخاب کنید.</text> }
+                            else { <span class="ltr">@g.Property</span><text>، @Fa.N(Model.GscDays) روز داده دریافت شده.</text> }
+                        </small>
+                    </div>
+                    @if (g is null || g.NeedsReconnect) { <a class="btn btn--sm" href="/oauth/google/start/@s.Id">@(g is null ? "اتصال" : "اتصال دوباره")</a> }
+                    else if (g.Property is null) { <a class="btn btn--sm" href="/panel/sites/@s.Id/gsc">انتخاب property</a> }
+                    else { <a class="btn btn--ghost btn--sm" href="/panel/sites/@s.Id/performance">عملکرد جستجو</a> }
+                </li>
+                <li class="@(Model.LastCrawl is not null ? "is-done" : "")">
+                    <span class="checklist__mark"></span>
+                    <div>
+                        <b>کراول کامل و سلامت فنی</b>
+                        <small>
+                            @if (Model.LastCrawl is { } lc) { <text>@Fa.N(lc.PagesCrawled) صفحه در @Fa.Date(lc.FinishedAt!.Value) کراول شد؛ @Fa.N(Model.IssueCount) هشدار و مشکل بحرانی.</text> }
+                            else { <text>صفحات، canonical، ریدایرکت‌ها و نقشهٔ سایت. اولین کراول خودکار در صف است.</text> }
+                        </small>
+                    </div>
+                    <a class="btn btn--ghost btn--sm" href="/panel/sites/@s.Id/health">سلامت فنی</a>
+                </li>
+                <li class="is-later">
+                    <span class="checklist__mark"></span>
+                    <div><b>اتصال وردپرس</b><small>برای اجرای تغییرات تأییدشده. در نسخهٔ ۰٫۳ فعال می‌شود.</small></div>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div>
+        <div class="box">
+            <div class="box__head"><h2>وضعیت پروژه</h2></div>
+            <div class="box__body">
+                <ol class="states">
+                    @foreach (var st in states)
+                    {
+                        <li aria-current="@(s.State == st ? "step" : null)"><b>@Fa.State(st)</b>@StateNote(st)</li>
+                    }
+                </ol>
+                <p class="muted" style="font-size:13.5px;margin-top:12px">تغییر وضعیت را سیستم پیشنهاد می‌دهد و ناظر سئو تأیید می‌کند. فقط ورود به بحران فوری است.</p>
+            </div>
+        </div>
+
+        <div class="box">
+            <div class="box__head"><h2>کلید توقف</h2></div>
+            <div class="box__body killswitch">
+                <p>@(s.IsPaused ? "همهٔ اقدامات روی این سایت متوقف است. تحلیل و گزارش ادامه دارد." : "با توقف، هیچ تغییری روی سایت اجرا نمی‌شود؛ فقط تحلیل و گزارش ادامه پیدا می‌کند.")</p>
+                <form method="post" asp-page-handler="Pause" asp-route-id="@s.Id">
+                    <input type="hidden" name="pause" value="@(s.IsPaused ? "false" : "true")" />
+                    @if (s.IsPaused) { <button class="btn btn--sm" type="submit">ادامهٔ اقدامات</button> }
+                    else { <button class="btn btn--danger btn--sm" type="submit">توقف همهٔ اقدامات</button> }
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="box">
+    <div class="box__head"><h2>دفتر رخدادها</h2><span class="muted" style="font-size:13.5px">غیرقابل ویرایش</span></div>
+    <div class="box__body" style="padding-block:6px">
+        @if (Model.Events.Count == 0) { <p class="muted">هنوز رخدادی ثبت نشده.</p> }
+        <ul class="ledger">
+            @foreach (var e in Model.Events)
+            {
+                <li><span>@Fa.Action(e.Action)</span><time datetime="@e.At.ToString("o")">@Fa.Date(e.At, withTime: true)</time></li>
+            }
+        </ul>
+    </div>
+</div>

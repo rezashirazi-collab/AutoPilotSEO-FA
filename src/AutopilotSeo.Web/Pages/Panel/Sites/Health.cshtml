@@ -1,0 +1,96 @@
+@page "/panel/sites/{id:int}/health"
+@model AutopilotSeo.Web.Pages.Panel.Sites.HealthModel
+@{
+    ViewData["Title"] = "سلامت فنی";
+    var last = Model.Last;
+    var passed = Model.Inspections.Count(i => i.Verdict == "PASS");
+    string Risk(Severity s) => s switch { Severity.Critical => "risk risk--3", Severity.Warning => "risk risk--2", _ => "risk risk--0" };
+}
+
+<div class="main__head">
+    <div>
+        <div class="crumbs"><a href="/panel">سایت‌ها</a> / <a href="/panel/sites/@Model.Site.Id" class="ltr">@Model.Site.Domain</a></div>
+        <h1>سلامت فنی</h1>
+        @if (last is not null) { <p>آخرین کراول: @Fa.Date(last.FinishedAt ?? last.QueuedAt, withTime: true)، @Fa.N(last.PagesCrawled) صفحه@(last.HitPageLimit ? " (به سقف تعداد صفحه رسید)" : "").</p> }
+    </div>
+    <form method="post" asp-page-handler="Crawl" asp-route-id="@Model.Site.Id">
+        <button class="btn btn--sm" type="submit" disabled="@(Model.Pending is not null)">@(Model.Pending?.Status == CrawlStatus.Running ? "در حال کراول…" : Model.Pending is not null ? "در صف کراول" : "کراول دوباره")</button>
+    </form>
+</div>
+
+@if (last is null)
+{
+    <div class="box"><div class="empty">
+        <h2>هنوز کراولی انجام نشده</h2>
+        <p>کراولر صفحه‌های سایت را از صفحهٔ اصلی و نقشهٔ سایت پیدا می‌کند و خطاها، ریدایرکت‌ها، canonical، noindex، عنوان‌ها و صفحه‌های یتیم را بررسی می‌کند. فقط می‌خواند و چیزی را تغییر نمی‌دهد.</p>
+        @if (Model.Pending is not null) { <p class="muted">کراول در صف است.</p> }
+    </div></div>
+}
+else if (last.Status == CrawlStatus.Failed)
+{
+    <div class="notice notice--warn">آخرین کراول انجام نشد: @last.Error</div>
+}
+else
+{
+    <div class="kpis">
+        <div class="kpi"><span>صفحهٔ سالم (۲xx)</span><b>@Fa.N(Model.Statuses.GetValueOrDefault("2xx"))</b><small></small></div>
+        <div class="kpi"><span>ریدایرکت (۳xx)</span><b>@Fa.N(Model.Statuses.GetValueOrDefault("3xx"))</b><small></small></div>
+        <div class="kpi"><span>خطا (۴xx، ۵xx، بی‌پاسخ)</span><b>@Fa.N(Model.Statuses.GetValueOrDefault("4xx") + Model.Statuses.GetValueOrDefault("5xx") + Model.Statuses.GetValueOrDefault("error"))</b><small></small></div>
+        <div class="kpi"><span>بسته با robots.txt</span><b>@Fa.N(Model.Statuses.GetValueOrDefault("robots"))</b><small></small></div>
+    </div>
+
+    <div class="box">
+        <div class="box__head"><h2>مشکلات پیدا شده</h2><span class="muted" style="font-size:13px">@Fa.N(Model.Groups.Sum(g => g.Count)) مورد در @Fa.N(Model.Groups.Count) نوع</span></div>
+        @if (Model.Groups.Count == 0)
+        {
+            <p class="box__body muted">در این کراول مشکلی پیدا نشد.</p>
+        }
+        <div class="issues">
+            @foreach (var g in Model.Groups)
+            {
+                <details class="issue">
+                    <summary>
+                        <span class="@Risk(g.Severity)">@Fa.Severity(g.Severity)</span>
+                        <b>@Fa.IssueType(g.Type)</b>
+                        <span class="issue__count">@Fa.N(g.Count)</span>
+                    </summary>
+                    <ul class="issue__urls">
+                        @foreach (var i in g.Sample)
+                        {
+                            <li><span class="ltr" title="@i.Url">@Uri.UnescapeDataString(i.Url)</span>@if (i.Detail is not null) { <small class="ltr">@i.Detail</small> }</li>
+                        }
+                        @if (g.Count > g.Sample.Count) { <li class="muted">و @Fa.N(g.Count - g.Sample.Count) صفحهٔ دیگر</li> }
+                    </ul>
+                </details>
+            }
+        </div>
+    </div>
+}
+
+<div class="box">
+    <div class="box__head"><h2>وضعیت ایندکس در گوگل</h2>
+        @if (Model.Inspections.Count > 0) { <span class="muted" style="font-size:13px">@Fa.N(passed) از @Fa.N(Model.Inspections.Count) صفحهٔ بررسی‌شده ایندکس است</span> }
+    </div>
+    @if (Model.Inspections.Count == 0)
+    {
+        <p class="box__body muted">بعد از اتصال سرچ کنسول، صفحه‌های پول‌ساز و پربازدید روزانه با URL Inspection بررسی می‌شوند.</p>
+    }
+    else
+    {
+        <div class="table-scroll">
+            <table class="table">
+                <thead><tr><th>صفحه</th><th>وضعیت</th><th>آخرین خزش گوگل</th></tr></thead>
+                <tbody>
+                @foreach (var i in Model.Inspections.Take(100))
+                {
+                    <tr>
+                        <td class="table__label"><span class="ltr" title="@i.Url">@Uri.UnescapeDataString(i.Url)</span></td>
+                        <td>@if (i.Verdict == "PASS") { <span class="risk risk--1">ایندکس</span> } else { <span class="risk risk--2" title="@i.CoverageState">@(i.CoverageState ?? i.Verdict)</span> }</td>
+                        <td>@(i.LastCrawlTime is { } t ? Fa.Date(t) : "—")</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

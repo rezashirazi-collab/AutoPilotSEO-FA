@@ -1,0 +1,29 @@
+@page
+@model AutopilotSeo.Web.Pages.Account.LoginModel
+@{
+    ViewData["Title"] = "ورود";
+    ViewData["Bare"] = true;
+}
+<div class="auth">
+    <div class="auth__box">
+        <a class="brand" href="/"><partial name="_Brand" /></a>
+        <h1>ورود به پنل</h1>
+        <form method="post" novalidate>
+            <input type="hidden" asp-for="ReturnUrl" />
+            <div asp-validation-summary="ModelOnly" class="form-errors"></div>
+            <div class="field">
+                <label asp-for="Input.Email">ایمیل</label>
+                <input asp-for="Input.Email" class="input" dir="ltr" autocomplete="email" />
+                <span asp-validation-for="Input.Email" class="field-error"></span>
+            </div>
+            <div class="field">
+                <label asp-for="Input.Password">رمز عبور</label>
+                <input asp-for="Input.Password" type="password" class="input" dir="ltr" autocomplete="current-password" />
+                <span asp-validation-for="Input.Password" class="field-error"></span>
+            </div>
+            <label class="check"><input asp-for="Input.RememberMe" /> مرا به خاطر بسپار</label>
+            <button class="btn" type="submit">ورود</button>
+        </form>
+        <p class="auth__alt">حساب نداری؟ <a href="/account/register">ثبت‌نام کن</a></p>
+    </div>
+</div>

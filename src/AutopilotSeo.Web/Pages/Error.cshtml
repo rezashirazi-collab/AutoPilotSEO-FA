@@ -1,0 +1,15 @@
+﻿@page
+@model ErrorModel
+@{
+    ViewData["Title"] = "خطا";
+    ViewData["Bare"] = true;
+}
+<div class="auth">
+    <div class="auth__box">
+        <a class="brand" href="/"><partial name="_Brand" /></a>
+        <h1>این درخواست انجام نشد</h1>
+        <p>خطا ثبت شد. چند لحظه بعد دوباره امتحان کنید؛ اگر تکرار شد، این کد را برای پشتیبانی بفرستید.</p>
+        @if (Model.ShowRequestId) { <p class="ltr muted" style="margin-top:12px;font-size:13px">@Model.RequestId</p> }
+        <p class="auth__alt"><a href="/">بازگشت به صفحهٔ اصلی</a></p>
+    </div>
+</div>
