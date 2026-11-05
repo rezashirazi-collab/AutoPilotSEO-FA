@@ -1,0 +1,52 @@
+@{
+    var site = ViewData["Site"] as Site;
+    var path = Context.Request.Path.Value?.TrimEnd('/') ?? "";
+    string? Cur(string href) => string.Equals(path, href, StringComparison.OrdinalIgnoreCase) ? "page" : null;
+}
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>@ViewData["Title"] | @Fa.ProductName</title>
+    <link rel="preload" href="~/fonts/estedad-arabic.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+<div class="panel">
+    <aside class="sidebar">
+        <a class="brand" href="/panel"><partial name="_Brand" /></a>
+        <a class="nav" href="/panel" aria-current="@Cur("/panel")">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/></svg>سایت‌ها
+        </a>
+        @if (site is not null)
+        {
+            <div class="sidebar__group">سایت فعلی</div>
+            <div class="sidebar__site ltr" title="@site.Domain">@site.Domain</div>
+            <a class="nav" href="/panel/sites/@site.Id" aria-current="@Cur($"/panel/sites/{site.Id}")">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 19V9m6 10V5m6 14v-7m4 7H2"/></svg>نمای کلی
+            </a>
+            <a class="nav" href="/panel/sites/@site.Id/performance" aria-current="@Cur($"/panel/sites/{site.Id}/performance")">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>عملکرد جستجو
+            </a>
+            <a class="nav" href="/panel/sites/@site.Id/health" aria-current="@Cur($"/panel/sites/{site.Id}/health")">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 12h4l3-7 4 14 3-7h4"/></svg>سلامت فنی
+            </a>
+            <a class="nav" href="/panel/sites/@site.Id/profile" aria-current="@Cur($"/panel/sites/{site.Id}/profile")">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"/><path d="M9 12h7M9 16h5"/></svg>پروندهٔ کسب‌وکار
+            </a>
+        }
+        <div class="sidebar__foot">
+            <div class="sidebar__user">@User.Identity?.Name</div>
+            <form method="post" asp-page="/Account/Logout"><button class="linkbtn" type="submit">خروج</button></form>
+        </div>
+    </aside>
+    <main class="main">
+        @if (TempData["Notice"] is string notice) { <div class="notice" role="status">@notice</div> }
+        @RenderBody()
+    </main>
+</div>
+@await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

@@ -1,0 +1,53 @@
+@page
+@model AutopilotSeo.Web.Pages.Panel.IndexModel
+@{ ViewData["Title"] = "سایت‌ها"; }
+
+<div class="main__head">
+    <div>
+        <h1>سایت‌ها</h1>
+        <p>هر سایت پروژهٔ جدایی است با پرونده، وضعیت و صف کار خودش.</p>
+    </div>
+    @if (Model.Rows.Count > 0) { <a class="btn" href="/panel/sites/new">افزودن سایت</a> }
+</div>
+
+<div class="box">
+    @if (Model.Rows.Count == 0)
+    {
+        <div class="empty">
+            <h2>هنوز سایتی اضافه نکرده‌ای</h2>
+            <p>دامنهٔ سایتت را وارد کن تا ساخت پروندهٔ کسب‌وکار شروع شود. تا وقتی پرونده تأیید نشده، سیستم فقط می‌خواند و چیزی را تغییر نمی‌دهد.</p>
+            <a class="btn" href="/panel/sites/new">افزودن اولین سایت</a>
+        </div>
+    }
+    else
+    {
+        <table class="table">
+            <thead><tr><th>سایت</th><th>وضعیت</th><th>پروندهٔ کسب‌وکار</th><th></th></tr></thead>
+            <tbody>
+            @foreach (var r in Model.Rows)
+            {
+                <tr>
+                    <td>
+                        <a class="site-link ltr" href="/panel/sites/@r.Site.Id">@r.Site.Domain</a>
+                        @if (r.Site.DisplayName != "") { <div class="muted" style="font-size:13.5px">@r.Site.DisplayName</div> }
+                    </td>
+                    <td>
+                        @if (r.Site.IsPaused) { <span class="state state--paused">متوقف</span> }
+                        else { <span class="state @(r.Site.State == ProjectState.Crisis ? "state--crisis" : "")">@Fa.State(r.Site.State)</span> }
+                    </td>
+                    <td>
+                        <div class="meter">
+                            <div class="meter__bar @(r.GatePassed ? "meter__bar--ok" : "")"><i style="width:@(r.Score)%"></i></div>
+                            <b>@Fa.Num(r.Score)٪</b>
+                        </div>
+                    </td>
+                    <td style="text-align:end">
+                        @if (r.Approved) { <a class="btn btn--ghost btn--sm" href="/panel/sites/@r.Site.Id">نمای کلی</a> }
+                        else { <a class="btn btn--sm" href="/panel/sites/@r.Site.Id/profile">تکمیل پرونده</a> }
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    }
+</div>

@@ -1,0 +1,29 @@
+@model (List<AutopilotSeo.Web.Pages.Panel.Sites.PerformanceModel.TopRow> Rows, bool IsUrl)
+@if (Model.Rows.Count == 0)
+{
+    <p class="box__body muted">برای این دوره داده‌ای نیست.</p>
+    return;
+}
+<div class="table-scroll">
+<table class="table">
+    <thead><tr><th>@(Model.IsUrl ? "صفحه" : "کوئری")</th><th>کلیک</th><th>نمایش</th><th>CTR</th><th>جایگاه</th></tr></thead>
+    <tbody>
+    @foreach (var r in Model.Rows)
+    {
+        <tr>
+            <td class="table__label">
+                @if (Model.IsUrl && Uri.TryCreate(r.Label, UriKind.Absolute, out var u) && (u.Scheme == "https" || u.Scheme == "http"))
+                {
+                    <a class="ltr" href="@u.AbsoluteUri" target="_blank" rel="noopener noreferrer" title="@r.Label">@Uri.UnescapeDataString(u.PathAndQuery)</a>
+                }
+                else { @r.Label }
+            </td>
+            <td>@Fa.N(r.Clicks)</td>
+            <td>@Fa.N(r.Impressions)</td>
+            <td>@Fa.Pct(r.Ctr)</td>
+            <td>@Fa.Dec(r.Position)</td>
+        </tr>
+    }
+    </tbody>
+</table>
+</div>

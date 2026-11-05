@@ -1,0 +1,270 @@
+@page "/panel/sites/{id:int}/profile"
+@model AutopilotSeo.Web.Pages.Panel.Sites.ProfileModel
+@{
+    ViewData["Title"] = "پروندهٔ کسب‌وکار";
+    var d = Model.Data;
+    while (d.Products.Count < ProfileRules.MinProducts) d.Products.Add(new());
+    while (d.Competitors.Count < ProfileRules.MinCompetitors) d.Competitors.Add(new());
+    var st = Model.Status;
+    var isDraftOfApproved = Model.ApprovedVersion is not null && Model.Latest.ApprovedAt is null;
+}
+
+<div class="main__head">
+    <div>
+        <div class="crumbs"><a href="/panel">سایت‌ها</a> / <a href="/panel/sites/@Model.Site.Id" class="ltr">@Model.Site.Domain</a></div>
+        <h1>پروندهٔ کسب‌وکار</h1>
+        <p>همهٔ تصمیم‌های بعدی از همین پرونده خوانده می‌شود: تحقیق کلمات، اولویت‌ها، بریف محتوا و فیلتر قبل از انتشار.</p>
+    </div>
+</div>
+
+<form method="post" class="profile" novalidate>
+    <div class="box">
+        <fieldset class="fs">
+            <legend>هدف سئو <span class="req">الزامی</span></legend>
+            <div class="fs__in">
+                <div class="row-2">
+                    <div class="field">
+                        <label asp-for="Data.Goal">هدف اصلی</label>
+                        <select asp-for="Data.Goal" class="select">
+                            @foreach (var g in Enum.GetValues<GoalType>())
+                            {
+                                <option value="@g">@Fa.Goal(g)</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label asp-for="Data.Kpi">شاخص اصلی</label>
+                        <input asp-for="Data.Kpi" class="input" placeholder="مثلاً تعداد فرم مشاوره در ماه" />
+                    </div>
+                </div>
+                <div class="row-2">
+                    <div class="field">
+                        <label asp-for="Data.Target">هدف عددی</label>
+                        <input asp-for="Data.Target" class="input" placeholder="مثلاً ۸۰ فرم در ماه" />
+                    </div>
+                    <div class="field">
+                        <label asp-for="Data.Timeframe">بازهٔ زمانی</label>
+                        <input asp-for="Data.Timeframe" class="input" placeholder="مثلاً تا پایان ۱۴۰۵" />
+                    </div>
+                </div>
+            </div>
+        </fieldset>
+
+        <fieldset class="fs">
+            <legend>محصولات و خدمات <span class="req">حداقل @Fa.Num(ProfileRules.MinProducts)</span></legend>
+            <div class="fs__in">
+                <p class="fs__hint">تحقیق کلمات از این فهرست شروع می‌شود و اولویت هر مورد در ارزش هر کلیک ضرب می‌شود. صفحهٔ پول‌ساز همان صفحه‌ای است که فروش یا لید از آن می‌آید.</p>
+                <div class="repeater" data-repeater="Products">
+                    <div class="repeater__row repeater__row--product repeater__head"><span>نام</span><span>صفحهٔ پول‌ساز</span><span>اولویت</span><span></span></div>
+                    @for (var i = 0; i < d.Products.Count; i++)
+                    {
+                        <div class="repeater__row repeater__row--product">
+                            <input name="Data.Products[@i].Name" value="@d.Products[i].Name" class="input" aria-label="نام محصول یا خدمت" />
+                            <input name="Data.Products[@i].Url" value="@d.Products[i].Url" class="input" dir="ltr" placeholder="https://" aria-label="آدرس صفحهٔ پول‌ساز" />
+                            <select name="Data.Products[@i].Priority" class="select" aria-label="اولویت">
+                                @for (var p = 5; p >= 1; p--)
+                                {
+                                    <option value="@p" selected="@(d.Products[i].Priority == p)">@Fa.Num(p)@(p == 5 ? " (بالا)" : p == 1 ? " (کم)" : "")</option>
+                                }
+                            </select>
+                            <button type="button" class="icon-btn" data-remove aria-label="حذف ردیف">×</button>
+                        </div>
+                    }
+                    <button type="button" class="btn btn--ghost btn--sm add-row" data-add>افزودن محصول یا خدمت</button>
+                </div>
+            </div>
+        </fieldset>
+
+        <fieldset class="fs">
+            <legend>رقبا <span class="req">حداقل @Fa.Num(ProfileRules.MinCompetitors)</span></legend>
+            <div class="fs__in">
+                <p class="fs__hint">رقبای تجاری که می‌شناسی. رقبای نتایج گوگل را بعد از اتصال سرچ کنسول خود سیستم پیدا و پیشنهاد می‌کند.</p>
+                <div class="repeater" data-repeater="Competitors">
+                    <div class="repeater__row repeater__row--competitor repeater__head"><span>دامنه</span><span>نقاط قوت و ضعف</span><span></span></div>
+                    @for (var i = 0; i < d.Competitors.Count; i++)
+                    {
+                        <div class="repeater__row repeater__row--competitor">
+                            <input name="Data.Competitors[@i].Domain" value="@d.Competitors[i].Domain" class="input" dir="ltr" placeholder="competitor.com" aria-label="دامنهٔ رقیب" />
+                            <input name="Data.Competitors[@i].Note" value="@d.Competitors[i].Note" class="input" aria-label="یادداشت دربارهٔ رقیب" />
+                            <button type="button" class="icon-btn" data-remove aria-label="حذف ردیف">×</button>
+                        </div>
+                    }
+                    <button type="button" class="btn btn--ghost btn--sm add-row" data-add>افزودن رقیب</button>
+                </div>
+            </div>
+        </fieldset>
+
+        <fieldset class="fs">
+            <legend>خط قرمزها <span class="req">الزامی</span></legend>
+            <div class="fs__in">
+                <p class="fs__hint">این موارد قبل از هر انتشار به صورت برنامه‌ای بررسی می‌شوند. اگر هیچ محدودیتی ندارید، صریحاً علامت بزنید.</p>
+                <label class="check"><input asp-for="Data.NoRedLines" /> خط قرمزی نداریم</label>
+                <div class="field">
+                    <label asp-for="Data.BannedClaims">ادعاهای ممنوع</label>
+                    <textarea asp-for="Data.BannedClaims" class="textarea" placeholder="قیمت، تضمین نتیجه، ادعای پزشکی یا حقوقی…"></textarea>
+                </div>
+                <div class="row-2">
+                    <div class="field">
+                        <label asp-for="Data.BannedCompetitorMentions">رقبایی که نباید نام برده شوند</label>
+                        <textarea asp-for="Data.BannedCompetitorMentions" class="textarea"></textarea>
+                    </div>
+                    <div class="field">
+                        <label asp-for="Data.BannedTopics">موضوعات ممنوع</label>
+                        <textarea asp-for="Data.BannedTopics" class="textarea"></textarea>
+                    </div>
+                </div>
+                <div class="field">
+                    <label asp-for="Data.ProtectedUrls">صفحات دست‌نخوردنی</label>
+                    <textarea asp-for="Data.ProtectedUrls" class="textarea" dir="ltr" placeholder="هر آدرس در یک خط"></textarea>
+                    <small>صفحات پرداخت، قیمت، قوانین و حریم خصوصی همیشه محافظت‌شده‌اند.</small>
+                </div>
+            </div>
+        </fieldset>
+
+        <fieldset class="fs">
+            <legend>لحن برند <span class="req">الزامی</span></legend>
+            <div class="fs__in">
+                <div class="row-2">
+                    <label class="check"><input type="radio" name="Data.FormalTone" value="true" checked="@d.FormalTone" /> رسمی</label>
+                    <label class="check"><input type="radio" name="Data.FormalTone" value="false" checked="@(!d.FormalTone)" /> صمیمی</label>
+                </div>
+                <div class="row-2">
+                    <div class="field">
+                        <label asp-for="Data.PreferredWords">واژه‌های ترجیحی</label>
+                        <textarea asp-for="Data.PreferredWords" class="textarea"></textarea>
+                    </div>
+                    <div class="field">
+                        <label asp-for="Data.BannedWords">واژه‌های ممنوع</label>
+                        <textarea asp-for="Data.BannedWords" class="textarea"></textarea>
+                    </div>
+                </div>
+                <div class="field">
+                    <label asp-for="Data.GoodSample">یک نمونه متن خوب از خودتان</label>
+                    <textarea asp-for="Data.GoodSample" class="textarea" style="min-height:120px"></textarea>
+                    <small>بعد از اتصال هوش مصنوعی، سه نمونه برای کالیبره کردن لحن ساخته می‌شود.</small>
+                </div>
+                <label class="check"><input asp-for="Data.ToneApproved" /> لحن بالا مورد تأیید من است</label>
+            </div>
+        </fieldset>
+
+        <fieldset class="fs">
+            <legend>مخاطب و جغرافیا</legend>
+            <div class="fs__in">
+                <div class="field">
+                    <label asp-for="Data.Personas">مخاطبان، نیازها و دردهایشان</label>
+                    <textarea asp-for="Data.Personas" class="textarea"></textarea>
+                </div>
+                <div class="field">
+                    <label asp-for="Data.Objections">سؤال‌ها و تردیدهای رایج قبل از خرید</label>
+                    <textarea asp-for="Data.Objections" class="textarea"></textarea>
+                </div>
+                <div class="field">
+                    <label asp-for="Data.Cities">شهرها و مناطق خدمت</label>
+                    <input asp-for="Data.Cities" class="input" placeholder="مثلاً تهران، کرج؛ یا سراسر کشور" />
+                </div>
+            </div>
+        </fieldset>
+
+        <fieldset class="fs">
+            <legend>مزیت رقابتی</legend>
+            <div class="fs__in">
+                <div class="field">
+                    <label asp-for="Data.Advantage">چرا مشتری شما را انتخاب می‌کند؟</label>
+                    <textarea asp-for="Data.Advantage" class="textarea" placeholder="تجربه، گواهی، ضمانت، قیمت…"></textarea>
+                </div>
+            </div>
+        </fieldset>
+
+        <fieldset class="fs">
+            <legend>منابع دانش و تقویم</legend>
+            <div class="fs__in">
+                <div class="field">
+                    <label asp-for="Data.KnowledgeSources">منابع دانش</label>
+                    <textarea asp-for="Data.KnowledgeSources" class="textarea" placeholder="کاتالوگ، پرسش‌های پشتیبانی، اسناد، آدرس صفحات مرجع"></textarea>
+                </div>
+                <div class="field">
+                    <label asp-for="Data.Authors">نویسندگان و کارشناسان واقعی</label>
+                    <textarea asp-for="Data.Authors" class="textarea" placeholder="نام و تخصص؛ نویسندهٔ ساختگی نمی‌سازیم"></textarea>
+                </div>
+                <div class="field">
+                    <label asp-for="Data.BusinessCalendar">تقویم کسب‌وکار</label>
+                    <textarea asp-for="Data.BusinessCalendar" class="textarea" placeholder="فصل فروش، کمپین‌ها، رویدادها، محصولات تازه"></textarea>
+                </div>
+            </div>
+        </fieldset>
+
+        <fieldset class="fs">
+            <legend>محدودیت فنی و گزارش‌ها</legend>
+            <div class="fs__in">
+                <div class="row-2">
+                    <div class="field">
+                        <label asp-for="Data.Theme">قالب سایت</label>
+                        <input asp-for="Data.Theme" class="input" dir="ltr" />
+                    </div>
+                    <div class="field">
+                        <label asp-for="Data.SeoPlugin">افزونهٔ سئو</label>
+                        <input asp-for="Data.SeoPlugin" class="input" dir="ltr" placeholder="Yoast, Rank Math, AIOSEO…" />
+                    </div>
+                </div>
+                <label class="check"><input asp-for="Data.HasDeveloper" /> به توسعه‌دهنده دسترسی داریم</label>
+                <div class="field">
+                    <label asp-for="Data.ReportEmails">ایمیل گیرندگان گزارش</label>
+                    <input asp-for="Data.ReportEmails" class="input" dir="ltr" placeholder="a@example.com, b@example.com" />
+                </div>
+            </div>
+        </fieldset>
+    </div>
+
+    <aside class="profile__aside">
+        <div class="box">
+            <div class="box__body">
+                <div class="field__label">کامل بودن پرونده</div>
+                <div class="meter" style="margin-top:8px">
+                    <div class="meter__bar @(st.GatePassed ? "meter__bar--ok" : "")"><i style="width:@(st.Score)%"></i></div>
+                    <b>@Fa.Num(st.Score)٪</b>
+                </div>
+                <div asp-validation-summary="ModelOnly" class="form-errors" style="margin-top:12px"></div>
+                @if (st.MissingRequired.Count > 0)
+                {
+                    <p style="margin-top:14px;font-size:14px;font-weight:700">مانده تا تأیید:</p>
+                    <ul class="missing">@foreach (var k in st.MissingRequired) { <li>@Fa.Section(k)</li> }</ul>
+                }
+                else if (st.MissingOptional.Count > 0)
+                {
+                    <p style="margin-top:14px;font-size:14px;color:var(--ink-2)">الزامی‌ها کامل است. با پر کردن @Fa.Num(st.MissingOptional.Count) بخش دیگر، پیشنهادها دقیق‌تر می‌شوند.</p>
+                }
+                <div class="profile__actions">
+                    <button class="btn btn--ghost" type="submit">ذخیرهٔ پیش‌نویس</button>
+                    <button class="btn btn--approve" type="submit" name="approve" value="true" disabled="@(!st.GatePassed)">تأیید پرونده</button>
+                </div>
+                <p class="version">
+                    نسخهٔ @Fa.Num(Model.Latest.Version)،
+                    @(Model.Latest.ApprovedAt is not null ? "تأییدشده" : "پیش‌نویس")
+                    @if (isDraftOfApproved) { <text>(نسخهٔ @Fa.Num(Model.ApprovedVersion!.Value) تأییدشده و فعال است)</text> }
+                </p>
+            </div>
+        </div>
+    </aside>
+</form>
+
+<template id="row-Products">
+    <div class="repeater__row repeater__row--product">
+        <input name="Data.Products[__i__].Name" class="input" aria-label="نام محصول یا خدمت" />
+        <input name="Data.Products[__i__].Url" class="input" dir="ltr" placeholder="https://" aria-label="آدرس صفحهٔ پول‌ساز" />
+        <select name="Data.Products[__i__].Priority" class="select" aria-label="اولویت">
+            <option value="5">۵ (بالا)</option><option value="4">۴</option><option value="3" selected>۳</option><option value="2">۲</option><option value="1">۱ (کم)</option>
+        </select>
+        <button type="button" class="icon-btn" data-remove aria-label="حذف ردیف">×</button>
+    </div>
+</template>
+<template id="row-Competitors">
+    <div class="repeater__row repeater__row--competitor">
+        <input name="Data.Competitors[__i__].Domain" class="input" dir="ltr" placeholder="competitor.com" aria-label="دامنهٔ رقیب" />
+        <input name="Data.Competitors[__i__].Note" class="input" aria-label="یادداشت دربارهٔ رقیب" />
+        <button type="button" class="icon-btn" data-remove aria-label="حذف ردیف">×</button>
+    </div>
+</template>
+
+@section Scripts {
+    <script src="~/js/repeater.js" asp-append-version="true"></script>
+}
